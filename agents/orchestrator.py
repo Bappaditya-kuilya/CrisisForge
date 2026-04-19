@@ -42,6 +42,8 @@ class CrisisOrchestrator:
         plan = context["agent_outputs"]["Action Optimizer"]["details"]["recommended_plan"]
         ethics = context["agent_outputs"]["Ethical Guardian"]["details"]
         forecast = context["agent_outputs"]["Risk Forecaster"]["details"]
+        scout = context["agent_outputs"]["Data Scout"]["details"]
+        extracted = scout["extracted_inputs"]
         overall_confidence = round(
             sum(output["confidence"] for output in context["agent_outputs"].values())
             / len(context["agent_outputs"]),
@@ -59,5 +61,9 @@ class CrisisOrchestrator:
                 "ethics_approved": ethics["approved"],
                 "overall_risk": forecast["overall_risk"],
                 "overall_confidence": overall_confidence,
+                "location": scout["location"],
+                "hazard_type": extracted["hazard_type"],
+                "urgency_hours": extracted["urgency_hours"],
+                "constraints": extracted["constraints"],
             },
         }

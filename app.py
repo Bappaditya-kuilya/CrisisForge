@@ -70,6 +70,7 @@ def inject_styles() -> None:
             background: var(--surface);
             border: 1px solid var(--line);
             min-height: 112px;
+            height: 100%;
         }
 
         .metric-label {
@@ -98,6 +99,34 @@ def inject_styles() -> None:
             border: 1px solid var(--line);
         }
 
+        .mobile-stack {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.85rem;
+            margin: 1rem 0 1.1rem 0;
+        }
+
+        .stack-card {
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+        }
+
+        .stack-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        .stack-value {
+            font-size: 1.28rem;
+            font-weight: 700;
+            margin-top: 0.35rem;
+            color: var(--ink);
+        }
+
         .agent-pill {
             display: inline-block;
             padding: 0.25rem 0.55rem;
@@ -107,6 +136,21 @@ def inject_styles() -> None:
             font-size: 0.78rem;
             margin-right: 0.35rem;
             border: 1px solid rgba(177,66,46,0.15);
+        }
+
+        @media (max-width: 900px) {
+            .hero {
+                padding: 1.2rem 1rem;
+                border-radius: 20px;
+            }
+
+            .metric-card {
+                min-height: 96px;
+            }
+
+            .mobile-stack {
+                grid-template-columns: 1fr;
+            }
         }
         </style>
         """,
@@ -176,14 +220,15 @@ def main() -> None:
     final_plan = result["final_plan"]
     location = result["agent_outputs"]["Data Scout"]["details"]["location"]
 
-    metric_cols = st.columns(4)
-    metrics = [
-        ("Location", location, "Primary crisis region"),
-        ("Confidence", f"{final_plan['overall_confidence']:.0%}", "Cross-agent confidence"),
-        ("Risk Level", f"{final_plan['overall_risk']:.0%}", "Forecast operational risk"),
-        ("Reach", str(final_plan["expected_people_reached"]), "Estimated people reached"),
+    metric_cols_top = st.columns(2)
+    metric_cols_bottom = st.columns(2)
+    metric_layout = [
+        (metric_cols_top[0], ("Location", location, "Primary crisis region")),
+        (metric_cols_top[1], ("Hazard", final_plan["hazard_type"].title(), "Detected crisis type")),
+        (metric_cols_bottom[0], ("Confidence", f"{final_plan['overall_confidence']:.0%}", "Cross-agent confidence")),
+        (metric_cols_bottom[1], ("Risk Level", f"{final_plan['overall_risk']:.0%}", "Forecast operational risk")),
     ]
-    for col, metric in zip(metric_cols, metrics):
+    for col, metric in metric_layout:
         with col:
             st.markdown(
                 f"""
@@ -196,8 +241,25 @@ def main() -> None:
                 unsafe_allow_html=True,
             )
 
-    left, right = st.columns([1.2, 0.8], gap="large")
-    with left:
+    st.markdown(
+        f"""
+        <div class="mobile-stack">
+            <div class="stack-card">
+                <div class="stack-title">Expected Reach</div>
+                <div class="stack-value">{final_plan['expected_people_reached']}</div>
+            </div>
+            <div class="stack-card">
+                <div class="stack-title">Critical Window</div>
+                <div class="stack-value">{f"{final_plan['urgency_hours']} hours" if final_plan['urgency_hours'] else "Not specified"}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    analysis_tab, trace_tab, fairness_tab = st.tabs(["Action Plan", "Agent Trace", "Fairness"])
+
+    with analysis_tab:
         st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.markdown(build_markdown_plan(result))
         st.markdown("</div>", unsafe_allow_html=True)
@@ -205,23 +267,23 @@ def main() -> None:
         st.dataframe(build_timeline_frame(result), use_container_width=True, hide_index=True)
         st.subheader("Strategy Ranking")
         st.dataframe(build_plan_frame(result), use_container_width=True, hide_index=True)
-
-    with right:
-        st.subheader("Reasoning Trace")
-        for agent_name, payload in result["agent_outputs"].items():
-            with st.expander(f"{agent_name} | confidence {payload['confidence']:.0%}", expanded=agent_name == "Data Scout"):
-                st.write(payload["summary"])
-                st.json(payload["details"])
-
-        st.subheader("Fairness Review")
-        st.dataframe(build_fairness_frame(result), use_container_width=True, hide_index=True)
-
         st.subheader("Voice Briefing")
         st.code(voice_text)
         if audio_bytes:
             st.audio(audio_bytes, format="audio/mp3")
         else:
             st.caption("Voice synthesis is unavailable in the current environment, but the text briefing has been generated.")
+
+    with trace_tab:
+        st.subheader("Reasoning Trace")
+        for agent_name, payload in result["agent_outputs"].items():
+            with st.expander(f"{agent_name} | confidence {payload['confidence']:.0%}", expanded=agent_name == "Data Scout"):
+                st.write(payload["summary"])
+                st.json(payload["details"])
+
+    with fairness_tab:
+        st.subheader("Fairness Review")
+        st.dataframe(build_fairness_frame(result), use_container_width=True, hide_index=True)
 
 
 if __name__ == "__main__":
