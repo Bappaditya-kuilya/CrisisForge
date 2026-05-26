@@ -27,6 +27,21 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+## Deploy on Vercel
+
+Vercel cannot run `streamlit run app.py` directly as a production entrypoint. This repository now includes a serverless Python API for deployment:
+
+```bash
+POST /analyze
+Content-Type: application/json
+
+{
+  "crisis_text": "Severe flood in coastal Mumbai affecting 10000 people, limited rescue boats, submerged roads, and an incoming cyclone within 8 hours."
+}
+```
+
+The root route `GET /` returns a small healthcheck payload. The Streamlit interface remains available for local development.
+
 ## Project structure
 
 ```text
@@ -54,4 +69,3 @@ crisisforge/
 - The app runs without API keys.
 - Open-Meteo is used directly for supported city lookups and does not require authentication.
 - Voice generation is optional and fails gracefully if the runtime blocks it.
-
