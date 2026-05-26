@@ -29,7 +29,12 @@ streamlit run app.py
 
 ## Deploy on Vercel
 
-Vercel cannot run `streamlit run app.py` directly as a production entrypoint. This repository now includes a serverless Python API for deployment:
+Vercel cannot run `streamlit run app.py` directly as a production entrypoint. This repository now includes a serverless Python app that serves:
+
+- an interactive CrisisForge web frontend at `/`
+- a programmatic analysis endpoint at `/analyze`
+
+Example API request:
 
 ```bash
 POST /analyze
@@ -40,7 +45,7 @@ Content-Type: application/json
 }
 ```
 
-The root route `GET /` returns a small healthcheck payload. The Streamlit interface remains available for local development.
+The Streamlit interface remains available for local development.
 
 ## Project structure
 
